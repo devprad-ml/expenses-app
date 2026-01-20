@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.db.session import engine, Base
-from app.api.endpoints import auth
+from app.api.endpoints import auth, expenses
 
 # --- Lifecycle (Database Creation) ---
 @asynccontextmanager
@@ -32,9 +32,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Register Routes ---
-app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Authentication"])
 
+# auth router
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Authentication"])
+# expenses router
+app.include_router(expenses.router, prefix=f"{settings.API_V1_STR}/expenses", tags=["Expenses"])
 @app.get("/")
 def root():
     return {"message": "AI Expense Tracker API is running"}
