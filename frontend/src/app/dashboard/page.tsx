@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { expenses } from '@/lib/api/api';
+import { expenses, auth } from '@/lib/api/api';
 import { useRouter } from 'next/navigation';
+import SpendingChart from '@/components/SpendingChart';
 import { 
-  Plus, Search, Filter, DollarSign, Calendar, Loader2,
-  Tag, ArrowRight, Trash2, LogOut, Sparkles 
+  Filter, DollarSign, Calendar, 
+  Tag, LogOut, Sparkles, Loader2, Settings, X 
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -16,11 +17,14 @@ export default function Dashboard() {
   // Data State
   const [expenseList, setExpenseList] = useState<any[]>([]);
   const [stats, setStats] = useState({ total: 0, count: 0 });
+  const [userProfile, setUserProfile] = useState<any>(null);
   
-  // AI Parsing State
+  // UI State
   const [aiInput, setAiInput] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [parsedResult, setParsedResult] = useState<any>(null);
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [newBudget, setNewBudget] = useState('');
 
   // Filters State
   const [filters, setFilters] = useState({
@@ -28,14 +32,24 @@ export default function Dashboard() {
     category: ''
   });
 
-  // Protect Route
+  // Protect Route & Load Data
   useEffect(() => {
-    if (!isAuthenticated) router.push('/');
-    loadExpenses();
+    // FIX: Add 'return' to stop execution if not authenticated
+    if (!isAuthenticated) {
+      router.push('/');
+      return; 
+    }
+    loadData();
   }, [isAuthenticated, filters]);
 
-  const loadExpenses = async () => {
+  const loadData = async () => {
     try {
+      // 1. Load User Profile (for Budget Limit)
+      const userRes = await auth.getMe();
+      setUserProfile(userRes.data);
+      setNewBudget(userRes.data.monthly_budget_limit?.toString() || '');
+
+      // 2. Load Expenses
       const params: any = {};
       if (filters.month) params.month = filters.month;
       if (filters.category) params.category = filters.category;
@@ -47,7 +61,7 @@ export default function Dashboard() {
       const total = res.data.reduce((acc: number, curr: any) => acc + curr.amount, 0);
       setStats({ total, count: res.data.length });
     } catch (err) {
-      console.error("Failed to load expenses", err);
+      console.error("Failed to load data", err);
     }
   };
 
@@ -70,37 +84,103 @@ export default function Dashboard() {
       await expenses.create(parsedResult);
       setParsedResult(null);
       setAiInput('');
-      loadExpenses(); // Refresh list
+      loadData(); 
     } catch (err) {
       alert("Failed to save expense.");
     }
   };
 
+  const saveBudget = async () => {
+    try {
+      await auth.updateMe({ monthly_budget_limit: parseFloat(newBudget) });
+      setShowBudgetModal(false);
+      loadData();
+    } catch (err) {
+      alert("Failed to update budget.");
+    }
+  };
+
   if (!isAuthenticated) return null;
 
+  // Calculate Progress Bar
+  const budgetLimit = userProfile?.monthly_budget_limit || 0;
+  const progressPercent = budgetLimit > 0 ? Math.min((stats.total / budgetLimit) * 100, 100) : 0;
+  const isOverBudget = budgetLimit > 0 && stats.total > budgetLimit;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative">
       
       {/* Navbar */}
-      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-xl text-emerald-400">
             <DollarSign className="bg-emerald-500/20 p-1 rounded-lg" size={32} />
             AI Finance
           </div>
-          <button 
-            onClick={logout}
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-          >
-            <LogOut size={16} /> Logout
-          </button>
+          <div className="flex gap-4">
+             <button 
+              onClick={() => setShowBudgetModal(true)}
+              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+            >
+              <Settings size={16} /> Budget
+            </button>
+            <button 
+              onClick={logout}
+              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+            >
+              <LogOut size={16} /> Logout
+            </button>
+          </div>
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 py-8 grid lg:grid-cols-12 gap-8">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8 grid lg:grid-cols-12 gap-8">
         
-        {/* Left Col: Input & Stats */}
+        {/* Left Col */}
         <div className="lg:col-span-4 space-y-6">
+          
+          {/* Stats Card with Progress Bar */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-slate-400 text-sm font-medium">Total This Month</h3>
+              {budgetLimit > 0 && (
+                <span className={`text-xs px-2 py-1 rounded font-medium ${isOverBudget ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                   {isOverBudget ? 'Over Budget' : 'On Track'}
+                </span>
+              )}
+            </div>
+            
+            <p className="text-4xl font-bold text-white mb-4">${stats.total.toFixed(2)}</p>
+            
+            {/* Progress Bar Section */}
+            {budgetLimit > 0 ? (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Progress</span>
+                  <span>${budgetLimit.toFixed(0)} Limit</span>
+                </div>
+                <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${isOverBudget ? 'bg-red-500' : 'bg-emerald-500'}`}
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <div className="text-xs text-right text-slate-500">
+                   {((stats.total / budgetLimit) * 100).toFixed(0)}% Used
+                </div>
+              </div>
+            ) : (
+               <button 
+                onClick={() => setShowBudgetModal(true)}
+                className="text-xs text-emerald-400 hover:underline"
+               >
+                 + Set a Monthly Budget
+               </button>
+            )}
+          </div>
+
+          <SpendingChart expenses={expenseList} />
           
           {/* AI Input Card */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
@@ -111,7 +191,7 @@ export default function Dashboard() {
             <div className="space-y-4">
               <textarea
                 placeholder="e.g. 'Dinner at Mario's for $45' or 'Paid $1200 for Rent'"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none h-32"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none h-32 text-sm"
                 value={aiInput}
                 onChange={(e) => setAiInput(e.target.value)}
               />
@@ -129,7 +209,7 @@ export default function Dashboard() {
               <div className="mt-6 p-4 bg-slate-800 rounded-xl border border-emerald-500/30 animate-in fade-in slide-in-from-top-2">
                 <div className="flex justify-between items-start mb-3">
                   <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Review</span>
-                  <span className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300">{parsedResult.category}</span>
+                  <span className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300 capitalize">{parsedResult.category}</span>
                 </div>
                 <div className="flex justify-between items-center mb-4">
                   <p className="font-medium text-lg">{parsedResult.description}</p>
@@ -146,27 +226,16 @@ export default function Dashboard() {
                     onClick={confirmExpense}
                     className="flex-1 py-2 text-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium"
                   >
-                    Confirm Check
+                    Confirm
                   </button>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Stats Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h3 className="text-slate-400 text-sm font-medium mb-1">Total This Month</h3>
-            <p className="text-4xl font-bold text-white">${stats.total.toFixed(2)}</p>
-            <div className="mt-4 pt-4 border-t border-slate-800 flex justify-between text-sm text-slate-500">
-              <span>Transactions</span>
-              <span>{stats.count}</span>
-            </div>
-          </div>
         </div>
 
         {/* Right Col: History */}
         <div className="lg:col-span-8 space-y-6">
-          
           {/* Filters */}
           <div className="flex flex-wrap gap-4 items-center justify-between bg-slate-900/50 p-4 rounded-xl border border-slate-800">
             <div className="flex items-center gap-2 text-slate-400">
@@ -218,11 +287,18 @@ export default function Dashboard() {
                       w-10 h-10 rounded-full flex items-center justify-center text-lg
                       ${expense.category === 'food' ? 'bg-orange-500/10 text-orange-500' : 
                         expense.category === 'rent' ? 'bg-blue-500/10 text-blue-500' :
+                        expense.category === 'transport' ? 'bg-purple-500/10 text-purple-500' :
+                        expense.category === 'entertainment' ? 'bg-pink-500/10 text-pink-500' :
+                        expense.category === 'utilities' ? 'bg-yellow-500/10 text-yellow-500' :
+                        expense.category === 'health' ? 'bg-red-500/10 text-red-500' :
                         'bg-slate-800 text-slate-400'}
                     `}>
                       {expense.category === 'food' ? '🍔' : 
                        expense.category === 'rent' ? '🏠' : 
-                       expense.category === 'transport' ? '🚗' : '🏷️'}
+                       expense.category === 'transport' ? '🚗' : 
+                       expense.category === 'entertainment' ? '🎬' : 
+                       expense.category === 'utilities' ? '⚡' : 
+                       expense.category === 'health' ? '🏥' : '🏷️'}
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-200">{expense.description}</h4>
@@ -245,9 +321,46 @@ export default function Dashboard() {
               ))
             )}
           </div>
-
         </div>
       </main>
+
+      {/* Budget Modal */}
+      {showBudgetModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
+            <button 
+              onClick={() => setShowBudgetModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X size={20} />
+            </button>
+            
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Settings className="text-emerald-400" size={20} />
+              Monthly Budget
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Set your monthly limit ($)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 2000"
+                  value={newBudget}
+                  onChange={(e) => setNewBudget(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                />
+              </div>
+              <button
+                onClick={saveBudget}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl transition-all"
+              >
+                Save Budget
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

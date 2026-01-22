@@ -28,8 +28,11 @@ export const auth = {
     }),
   register: (email: string, password: string, full_name: string) => 
     api.post('/auth/register', { email, password, full_name }),
+
+  getMe: () => api.get('/auth/me'),
+  updateMe: (data: { monthly_budget_limit?: number }) => api.put('/auth/me', data),
 };
-// GET(read ) API to get expenses with fitlers
+// GET(read) API to get expenses with filters
 export const expenses = {
   // Get all expenses (with optional filters)
   getAll: (filters?: { month?: number; category?: string; min_price?: number; max_price?: number }) => 

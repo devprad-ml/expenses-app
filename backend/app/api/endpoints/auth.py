@@ -8,7 +8,7 @@ from app.db.session import get_db
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.config import settings
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, Token
+from app.schemas.user import UserCreate, UserResponse, Token, UserUpdate
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from app.core.config import settings
@@ -99,3 +99,28 @@ async def get_current_user(
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+@router.get("/me", response_model=UserResponse)
+async def read_users_me(current_user: User = Depends(get_current_active_user)):
+    """Get current user details (budget, name, email)."""
+    return current_user
+
+@router.put("/me", response_model=UserResponse)
+async def update_user_me(
+    user_update: UserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Update user profile (budget limit)."""
+    if user_update.monthly_budget_limit is not None:
+        current_user.monthly_budget_limit = user_update.monthly_budget_limit
+    
+    if user_update.full_name is not None:
+        current_user.full_name = user_update.full_name
+
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
