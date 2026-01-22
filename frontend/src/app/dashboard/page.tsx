@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import SpendingChart from '@/components/SpendingChart';
 import { 
   Filter, DollarSign, Calendar, 
-  Tag, LogOut, Sparkles, Loader2, Settings, X 
+  Tag, LogOut, Sparkles, Loader2, Settings, X, ChevronDown, User 
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -34,17 +34,16 @@ export default function Dashboard() {
 
   // Protect Route & Load Data
   useEffect(() => {
-    // FIX: Add 'return' to stop execution if not authenticated
     if (!isAuthenticated) {
       router.push('/');
-      return; 
+      return;
     }
     loadData();
   }, [isAuthenticated, filters]);
 
   const loadData = async () => {
     try {
-      // 1. Load User Profile (for Budget Limit)
+      // 1. Load User Profile (for Budget Limit & Name)
       const userRes = await auth.getMe();
       setUserProfile(userRes.data);
       setNewBudget(userRes.data.monthly_budget_limit?.toString() || '');
@@ -117,19 +116,39 @@ export default function Dashboard() {
             <DollarSign className="bg-emerald-500/20 p-1 rounded-lg" size={32} />
             AI Finance
           </div>
-          <div className="flex gap-4">
-             <button 
-              onClick={() => setShowBudgetModal(true)}
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-            >
-              <Settings size={16} /> Budget
+          
+          {/* User Profile Dropdown */}
+          <div className="relative group">
+            <button className="flex items-center gap-3 text-sm font-medium text-slate-300 hover:text-white transition-colors py-2 px-3 rounded-lg hover:bg-slate-800/50 outline-none">
+              <div className="w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400">
+                 <User size={18} />
+              </div>
+              {/* Full Name Display */}
+              <span>{userProfile?.full_name || 'User'}</span>
+              <ChevronDown size={16} className="text-slate-500 group-hover:text-slate-300 transition-colors" />
             </button>
-            <button 
-              onClick={logout}
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-            >
-              <LogOut size={16} /> Logout
-            </button>
+
+            {/* Dropdown Menu */}
+            <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right z-50">
+              <div className="p-1">
+                <div className="px-4 py-2 border-b border-slate-800 mb-1 sm:hidden">
+                   <p className="text-xs text-slate-500">Signed in as</p>
+                   <p className="font-medium text-white truncate">{userProfile?.full_name || 'User'}</p>
+                </div>
+                <button
+                  onClick={() => setShowBudgetModal(true)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg flex items-center gap-2 transition-colors"
+                >
+                  <Settings size={16} /> Change Budget
+                </button>
+                <button
+                  onClick={logout}
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg flex items-center gap-2 transition-colors"
+                >
+                  <LogOut size={16} /> Logout
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </nav>
