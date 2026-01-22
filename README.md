@@ -17,7 +17,7 @@ I built a Natural Language Expense Tracker. Instead of forms, users simply type:
 
 The system uses OpenAI's **GPT-4o-mini** to intelligently parse this string into structured JSON:
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   {    "description": "Dinner at Mario's Italian",    "amount": 45.00,    "category": "Food",    "date": "2024-03-21"  }   `
+json `   {    "description": "Dinner at Mario's Italian",    "amount": 45.00,    "category": "Food",    "date": "2024-03-21"  }   `
 
 🛠️ Tech Stack
 --------------
@@ -87,12 +87,19 @@ Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQL
     
 
 ### 1\. Clone & Setup Backend
-
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   cd backend  python -m venv venv  # Windows:  .\venv\Scripts\activate  # Mac/Linux:  source venv/bin/activate  pip install -r requirements.txt  # Set up environment variables  # Create a .env file and add:  # OPENAI_API_KEY="your_key_here"  # SECRET_KEY="your_secret_here"  # Run Server  python main.py   `
+cd backend  python -m venv venv  
+# Windows:  .\venv\Scripts\activate  
+# Mac/Linux:  source venv/bin/activate  
+pip install -r requirements.txt  
+# Set up environment variables  
+# Create a .env file and add:  
+# OPENAI_API_KEY="your_key_here"  
+# SECRET_KEY="your_secret_here"  
+# Run Server  python main.py 
 
 ### 2\. Setup Frontend
 
-Plain textANTLR4BashCC#CSSCoffeeScriptCMakeDartDjangoDockerEJSErlangGitGoGraphQLGroovyHTMLJavaJavaScriptJSONJSXKotlinLaTeXLessLuaMakefileMarkdownMATLABMarkupObjective-CPerlPHPPowerShell.propertiesProtocol BuffersPythonRRubySass (Sass)Sass (Scss)SchemeSQLShellSwiftSVGTSXTypeScriptWebAssemblyYAMLXML`   cd frontend  npm install  npm run dev   `
+   cd frontend  npm install  npm run dev   `
 
 Visit http://localhost:3000 to start tracking!
 
