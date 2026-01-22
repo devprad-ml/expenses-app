@@ -119,6 +119,6 @@ Visit http://localhost:3000 to start tracking!
 👨‍💻 Author
 ------------
 
-Built by **\[Your Name\]** as an exploration into AI Engineering.
+Built by **\[Pradyumnn Motadoo\]** as an exploration into AI Engineering.
 
-\[LinkedIn Profile\] | \[GitHub Profile\]
+\[[LinkedIn Profile](https://www.linkedin.com/in/pradyumnn/)\] | \[[GitHub Profile](https://github.com/devprad-ml)\]
