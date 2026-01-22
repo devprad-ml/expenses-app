@@ -17,7 +17,10 @@ I built a Natural Language Expense Tracker. Instead of forms, users simply type:
 
 The system uses OpenAI's **GPT-4o-mini** to intelligently parse this string into structured JSON:
 
-json `   {    "description": "Dinner at Mario's Italian",    "amount": 45.00,    "category": "Food",    "date": "2024-03-21"  }   `
+json `   {    "description": "Dinner at Mario's Italian",    
+"amount": 45.00,    
+"category": "Food",    
+"date": "2024-03-21"  }   `
 
 🛠️ Tech Stack
 --------------
@@ -88,14 +91,14 @@ json `   {    "description": "Dinner at Mario's Italian",    "amount": 45.00,   
 
 ### 1\. Clone & Setup Backend
 cd backend  python -m venv venv  
-# Windows:  .\venv\Scripts\activate  
-# Mac/Linux:  source venv/bin/activate  
+*  Windows: .\venv\Scripts\activate  
+* Mac/Linux:  source venv/bin/activate  
 pip install -r requirements.txt  
-# Set up environment variables  
-# Create a .env file and add:  
-# OPENAI_API_KEY="your_key_here"  
-# SECRET_KEY="your_secret_here"  
-# Run Server  python main.py 
+# Set up environment variables:  
+* Create a .env file and add:  
+* OPENAI_API_KEY="your_key_here"  
+* SECRET_KEY="your_secret_here"  
+* Run Server  python main.py 
 
 ### 2\. Setup Frontend
 
