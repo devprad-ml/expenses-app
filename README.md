@@ -121,4 +121,4 @@ Visit http://localhost:3000 to start tracking!
 
 Built by **Pradyumnn Motadoo** as an exploration into AI Engineering.
 
-\[LinkedIn Profile(https://www.linkedin.com/in/pradyumnn/)\] | \[GitHub Profile(https://github.com/devprad-ml)\]
+**LinkedIn:** https://www.linkedin.com/in/pradyumnn/
