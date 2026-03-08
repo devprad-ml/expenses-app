@@ -107,3 +107,23 @@ async def get_expenses(
         
     result = await db.execute(query)
     return result.scalars().all()
+
+# deleting an expense API
+@router.delete("/{expense_id}", status_code=204)
+async def delete_expense(
+    expense_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)):
+    """ we delete expense by its ID. only the owner can delete the expense"""
+    result = await db.execute(
+        select(Expense).where(
+            Expense.id == expense_id,
+            Expense.user_id == current_user.id
+        )
+    )
+    expense = result.scalar_one_or_none()
+
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    await db.delete(expense)
+    await db.commit()

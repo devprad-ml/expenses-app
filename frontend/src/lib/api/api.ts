@@ -51,6 +51,9 @@ export const expenses = {
   },
   // Confirm and Save,store
   create: (data: any) => api.post('/expenses/', data),
+
+  // delete an expense by ID
+  delete: (id: number) => api.delete(`/expenses/${id}`),
 }
 // now we can use it anywhere in the code
 export default api;

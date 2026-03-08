@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import SpendingChart from '@/components/SpendingChart';
 import { 
   Filter, DollarSign, Calendar, 
-  Tag, LogOut, Sparkles, Loader2, Settings, X, ChevronDown, User 
+  Tag, LogOut, Sparkles, Loader2, Settings, X, ChevronDown, User, Trash2
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -389,8 +389,23 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="font-bold text-emerald-400">
-                    -${expense.amount.toFixed(2)}
+                  <div className="flex items-center gap-3">
+                    <div className="font-bold text-emerald-400">
+                      -${expense.amount.toFixed(2)}
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await expenses.delete(expense.id);
+                          loadData();
+                        } catch {
+                          alert("Failed to delete expense.");
+                        }
+                      }}
+                      className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
               ))
