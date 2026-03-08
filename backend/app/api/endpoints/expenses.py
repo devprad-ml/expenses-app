@@ -1,6 +1,7 @@
 from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile
+import base64
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, extract
 
@@ -23,7 +24,21 @@ async def parse_expense_text(request: ExpenseLogRequest):
     parsed_data = await ai_parser.parse_text(request.text)
     return parsed_data
 
-# --- 2. Create Expense (Save) ---
+@router.post("/scan-receipt", response_model=ExpenseCreate)
+async def scan_receipt(file: UploadFile = File(...)):
+    """
+    Accepts a receipt image, uses GPT-4o vision to extract expense data.
+    Does NOT save to DB yet (user confirms first).
+    """
+    contents = await file.read()
+    base64_image = base64.b64encode(contents).decode("utf-8")
+    media_type = file.content_type  # e.g. "image/jpeg"
+
+    parsed_data = await ai_parser.parse_image(base64_image, media_type)
+    return parsed_data
+
+
+#  2. Create Expense (Save) 
 @router.post("/", response_model=ExpenseResponse)
 async def create_expense(
     expense_in: ExpenseCreate,
@@ -48,7 +63,7 @@ async def create_expense(
     if current_user.monthly_budget_limit > 0:
         if (total_spent + expense_in.amount) > current_user.monthly_budget_limit:
             print(f"WARNING: User {current_user.email} exceeded budget!")
-
+     # dump this PyDantic model and create new and add to DB
     new_expense = Expense(
         **expense_in.model_dump(),
         user_id=current_user.id
@@ -58,7 +73,7 @@ async def create_expense(
     await db.refresh(new_expense)
     return new_expense
 
-# --- 3. Get Expenses (With Filters) ---
+#  3. Get Expenses (With Filters) 
 @router.get("/", response_model=List[ExpenseResponse])
 async def get_expenses(
     month: Optional[int] = None,

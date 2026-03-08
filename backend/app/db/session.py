@@ -16,7 +16,7 @@ AsyncSessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
-
+# yield lets us end the session gracefully preventing the app from crashing.
 async def get_db():
     async with AsyncSessionLocal() as session:
         try:

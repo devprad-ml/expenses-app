@@ -40,9 +40,17 @@ export const expenses = {
     
   // parse text(alphanumeric) to create the expense
   parse: (text: string) => api.post('/expenses/parse', { text }),
-  
+
+  // Scan a receipt image and extract expense data
+  scanReceipt: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/expenses/scan-receipt', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   // Confirm and Save,store
   create: (data: any) => api.post('/expenses/', data),
-};
+}
 // now we can use it anywhere in the code
 export default api;
