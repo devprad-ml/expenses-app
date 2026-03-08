@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Auth Secrets (CHANGE THESE IN PROD)
-    SECRET_KEY: str = "CHANGE_THIS_TO_A_SUPER_SECRET_KEY_12345"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 1 week
     
