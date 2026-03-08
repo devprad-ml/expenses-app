@@ -158,3 +158,4 @@ expenses-app/
 | POST | `/api/v1/expenses/parse` | Parse expense from text (AI) |
 | POST | `/api/v1/expenses/scan-receipt` | Parse expense from image (AI) |
 | DELETE | `/api/v1/expenses/{id}` | Delete an expense |
+
