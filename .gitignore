@@ -44,4 +44,5 @@ yarn-error.log*
 
 .vscode/
 .idea/
-*.swp
+*.swptest.db
+test.db
