@@ -70,5 +70,64 @@ class AIExpenseParser:
                 amount=0.0, 
                 category="other"
             )
+    
+    async def parse_image(self, base64_image: str, media_type: str) -> ExpenseCreate:
+        """
+        Uses GPT-4o vision to extract structured expense data from a receipt image.
+        """
+        valid_categories = [e.value for e in ExpenseCategory]
+
+        system_prompt = f"""
+        You are an expense tracker assistant. Analyze this receipt image.
+        Return ONLY a JSON object (no markdown, no explanations) with these keys:
+        - description (string): Short merchant/item summary
+        - amount (float): Total amount paid (numeric only, no currency symbols)
+        - category (string): One of {valid_categories}
+
+        If the category is not clear, use "other".
+        """
+
+        try:
+            response = await client.chat.completions.create(
+                model="gpt-4o",  # gpt-4o-mini does NOT support vision
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{media_type};base64,{base64_image}"
+                            }
+                        },
+                        {"type": "text", "text": "Extract the expense from this receipt."}
+                    ]}
+                ],
+                temperature=0
+            )
+
+            content = response.choices[0].message.content
+            cleaned_content = content.replace("```json", "").replace("```", "").strip()
+            data = json.loads(cleaned_content)
+
+            category_str = data.get("category", "other").lower()
+            if category_str not in valid_categories:
+                category_str = "other"
+
+            return ExpenseCreate(
+                description=data.get("description", "Receipt Scan"),
+                amount=float(data.get("amount", 0)),
+                category=category_str,
+                date=datetime.utcnow()
+            )
+
+        except Exception as e:
+            print(f"\n❌ RECEIPT SCAN ERROR: {e}")
+            if 'content' in locals():
+                print(f"RAW AI RESPONSE: {content}\n")
+            return ExpenseCreate(
+                description="Receipt Scan",
+                amount=0.0,
+                category="other"
+            )
 
 ai_parser = AIExpenseParser()

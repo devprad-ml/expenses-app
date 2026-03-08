@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import SpendingChart from '@/components/SpendingChart';
 import { 
   Filter, DollarSign, Calendar, 
-  Tag, LogOut, Sparkles, Loader2, Settings, X, ChevronDown, User 
+  Tag, LogOut, Sparkles, Loader2, Settings, X, ChevronDown, User, Trash2
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -25,6 +25,8 @@ export default function Dashboard() {
   const [parsedResult, setParsedResult] = useState<any>(null);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [newBudget, setNewBudget] = useState('');
+  const [inputMode, setInputMode] = useState<'text' | 'scan'>('text');
+  const [isScanning, setIsScanning] = useState(false);
 
   // Filters State
   const [filters, setFilters] = useState({
@@ -207,21 +209,75 @@ export default function Dashboard() {
               <Sparkles className="text-purple-400" size={20} />
               Add Expense
             </h2>
-            <div className="space-y-4">
-              <textarea
-                placeholder="e.g. 'Dinner at Mario's for $45' or 'Paid $1200 for Rent'"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none h-32 text-sm"
-                value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-              />
+
+            {/* Mode Toggle */}
+            <div className="flex bg-slate-950 rounded-xl p-1 mb-4">
               <button
-                onClick={handleAIParse}
-                disabled={isParsing || !aiInput}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-800 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                onClick={() => setInputMode('text')}
+                className={`flex-1 py-2 text-sm rounded-lg font-medium transition-all ${inputMode === 'text' ? 'bg-emerald-500 text-white' : 'text-slate-400 hover:text-white'}`}
               >
-                {isParsing ? <Loader2 className="animate-spin" /> : "Magic Parse"}
+                ✏️ Type
+              </button>
+              <button
+                onClick={() => setInputMode('scan')}
+                className={`flex-1 py-2 text-sm rounded-lg font-medium transition-all ${inputMode === 'scan' ? 'bg-emerald-500 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                📷 Scan Receipt
               </button>
             </div>
+
+            {inputMode === 'text' ? (
+              <div className="space-y-4">
+                <textarea
+                  placeholder="e.g. 'Dinner at Mario's for $45' or 'Paid $1200 for Rent'"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none h-32 text-sm"
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                />
+                <button
+                  onClick={handleAIParse}
+                  disabled={isParsing || !aiInput}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-800 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  {isParsing ? <Loader2 className="animate-spin" /> : "Magic Parse"}
+                </button>
+              </div>
+            ) : (
+              <label className="block w-full border-2 border-dashed border-slate-700 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-500/50 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setIsScanning(true);
+                    try {
+                      const res = await expenses.scanReceipt(file);
+                      setParsedResult(res.data);
+                    } catch {
+                      alert("Receipt scan failed. Try again.");
+                    } finally {
+                      setIsScanning(false);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+                {isScanning ? (
+                  <div className="flex flex-col items-center gap-2 text-emerald-400">
+                    <Loader2 className="animate-spin" size={32} />
+                    <span className="text-sm">Analyzing receipt...</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-slate-400">
+                    <span className="text-4xl">🧾</span>
+                    <span className="font-medium text-sm">Tap to upload or take photo</span>
+                    <span className="text-xs text-slate-600">JPG, PNG, HEIC supported</span>
+                  </div>
+                )}
+              </label>
+            )}
 
             {/* AI Review UI */}
             {parsedResult && (
@@ -333,8 +389,23 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="font-bold text-emerald-400">
-                    -${expense.amount.toFixed(2)}
+                  <div className="flex items-center gap-3">
+                    <div className="font-bold text-emerald-400">
+                      -${expense.amount.toFixed(2)}
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await expenses.delete(expense.id);
+                          loadData();
+                        } catch {
+                          alert("Failed to delete expense.");
+                        }
+                      }}
+                      className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
               ))
